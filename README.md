@@ -63,6 +63,10 @@ This is an unofficial tool and isn't affiliated with Stremio. It uses the same A
 
 > **100% vibe coded.** Every line was written by AI (Claude) from plain-language instructions. Expect rough edges, and keep a backup.
 
+## Support
+
+Stremio Addon Order is free, with no ads. If you enjoy it, you can [buy me a coffee on Ko-fi](https://ko-fi.com/hertn).
+
 ## License
 
 [MIT](LICENSE)
