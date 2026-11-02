@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Addon Order">
+<title>Stremio Addon Order</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%239b7bff'/%3E%3Cstop offset='1' stop-color='%235b3fd6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14.4' fill='url(%23g)'/%3E%3Cg transform='translate(12 12) scale(1.6667)' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6h10M4 12h10M4 18h10'/%3E%3Cpath d='M19 4v16M16.5 6.5 19 4l2.5 2.5M16.5 17.5 19 20l2.5-2.5'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f2f2f7; --card:#ffffff; --card-2:#f7f7fa; --text:#1d1d1f; --text-2:#6e6e73; --text-3:#8e8e93;
+  --sep:rgba(60,60,67,.16); --fill:rgba(120,120,128,.12); --fill-2:rgba(120,120,128,.2);
+  --accent:#6243d6; --accent-soft:rgba(98,67,214,.11); --on-accent:#fff;
+  --up:#1f8a3d; --down:#c4471b; --danger:#d70015;
+  --bar:rgba(255,255,255,.78); --shadow:0 1px 2px rgba(0,0,0,.05),0 12px 32px rgba(30,20,80,.12);
+  --lift:0 2px 6px rgba(0,0,0,.08),0 18px 40px rgba(40,25,110,.22);
+  --r:14px;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#000; --card:#1c1c1e; --card-2:#242427; --text:#f5f5f7; --text-2:#a1a1a8; --text-3:#7c7c82;
+  --sep:rgba(84,84,88,.55); --fill:rgba(120,120,128,.22); --fill-2:rgba(120,120,128,.32);
+  --accent:#a28bff; --accent-soft:rgba(162,139,255,.16); --on-accent:#140b33;
+  --up:#4cd471; --down:#ff8a5c; --danger:#ff6961;
+  --bar:rgba(36,36,40,.78); --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.5);
+  --lift:0 2px 8px rgba(0,0,0,.5),0 22px 48px rgba(0,0,0,.6);
+}}
+@media (prefers-contrast:more){:root{--sep:rgba(60,60,67,.45);--text-2:#48484d}}
+@media (prefers-contrast:more) and (prefers-color-scheme:dark){:root{--sep:rgba(160,160,170,.6);--text-2:#d0d0d6}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:8px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px calc(120px + env(safe-area-inset-bottom))}
+.hidden{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- header ---------- */
+header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid transparent;transition:border-color .2s}
+header.scrolled{border-bottom-color:var(--sep)}
+.hbar{max-width:720px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:8px;min-height:52px}
+.hbar .t{font-weight:600;font-size:17px;flex:1;opacity:0;transition:opacity .2s}
+header.scrolled .hbar .t{opacity:1}
+.ibtn{width:40px;height:40px;border-radius:20px;border:0;background:var(--fill);display:grid;place-items:center;color:var(--accent)}
+.ibtn:hover{background:var(--fill-2)}
+.ibtn svg{width:20px;height:20px}
+.ibtn[disabled]{opacity:.4;cursor:default}
+h1{font-size:34px;line-height:1.12;letter-spacing:.01em;font-weight:700;margin:4px 0 6px}
+.lede{color:var(--text-2);font-size:15px;margin:0 0 22px;max-width:52ch}
+.lede b{color:var(--text);font-weight:600}
+
+/* ---------- sign in ---------- */
+.signin{max-width:420px;margin:8vh auto 0}
+.mark{width:64px;height:64px;border-radius:15px;background:linear-gradient(135deg,#9b7bff,#5b3fd6);display:grid;place-items:center;margin-bottom:18px;box-shadow:0 8px 24px rgba(91,63,214,.35)}
+.mark svg{width:36px;height:36px}
+.group{background:var(--card);border-radius:var(--r);overflow:hidden}
+.field{display:flex;align-items:center;min-height:50px;padding:0 16px;position:relative}
+.field+.field::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--sep)}
+.field label{width:96px;flex:none}
+.field input{flex:1;min-width:0;border:0;background:none;outline:none;padding:13px 0;font-size:17px}
+.field input::placeholder{color:var(--text-3)}
+.field:focus-within{box-shadow:inset 3px 0 0 var(--accent)}
+.foot{color:var(--text-2);font-size:13px;margin:8px 16px 0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 22px;border-radius:14px;border:0;font-weight:600;font-size:17px}
+.btn.pri{background:var(--accent);color:var(--on-accent);width:100%;margin-top:20px}
+.btn.pri:hover{filter:brightness(1.07)}
+.btn[disabled]{opacity:.5;cursor:default}
+.link{background:none;border:0;color:var(--accent);padding:10px 0;font-size:15px}
+.err{color:var(--danger);font-size:15px;margin:12px 4px 0;min-height:1em}
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid currentColor;border-right-color:transparent;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ---------- list ---------- */
+.meta{display:flex;align-items:baseline;justify-content:space-between;margin:0 16px 8px;color:var(--text-2);font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+.meta button{text-transform:none;letter-spacing:0;font-size:15px;padding:0}
+#list{list-style:none;margin:0;padding:0;background:var(--card);border-radius:var(--r);position:relative}
+.row{position:relative;display:flex;align-items:center;gap:12px;min-height:72px;padding:10px 4px 10px 0;background:var(--card);touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.row:first-child{border-radius:var(--r) var(--r) 0 0}.row:last-child{border-radius:0 0 var(--r) var(--r)}
+.row:only-child{border-radius:var(--r)}
+.row+.row::before{content:"";position:absolute;top:0;left:104px;right:0;border-top:.5px solid var(--sep)}
+.row.shift{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.row.drag{z-index:10;border-radius:12px;box-shadow:var(--lift);background:var(--card-2);transition:box-shadow .15s,transform 0s}
+.row.drag::before,.row.drag+.row::before{opacity:0}
+.row.settle{transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s}
+.row:focus-visible{outline:none;box-shadow:inset 0 0 0 3px var(--accent)}
+.row.flash{animation:fl 1s ease-out}
+@keyframes fl{0%{background:var(--accent-soft)}100%{background:var(--card)}}
+
+.rank{width:44px;flex:none;text-align:right;font:600 22px/1 -apple-system,BlinkMacSystemFont,"SF Pro Rounded","SF Pro Display",system-ui,sans-serif;font-variant-numeric:tabular-nums;color:var(--text-3);letter-spacing:-.02em;position:relative}
+.row:nth-child(-n+3) .rank{color:var(--accent)}
+.delta{position:absolute;right:0;top:100%;margin-top:3px;font-size:11px;font-weight:700;letter-spacing:0;white-space:nowrap}
+.delta.u{color:var(--up)}.delta.d{color:var(--down)}
+.logo{width:44px;height:44px;flex:none;border-radius:10px;background:var(--fill);display:grid;place-items:center;overflow:hidden;font-weight:700;font-size:19px;color:#fff}
+.logo.img{background:#2b2b31!important;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.12)}
+.logo img{width:100%;height:100%;object-fit:contain;padding:3px}
+.info{flex:1;min-width:0}
+.name{display:flex;align-items:center;gap:6px;font-weight:600;font-size:17px;line-height:1.25}
+.name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{flex:none;font-size:11px;font-weight:600;color:var(--text-2);background:var(--fill);border-radius:5px;padding:2px 6px;line-height:1.3}
+.badge.lock{display:inline-flex;align-items:center;gap:3px}
+.sub{display:block;color:var(--text-2);font-size:13px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.more{width:40px;height:44px;flex:none;border:0;background:none;color:var(--text-3);border-radius:10px;display:grid;place-items:center}
+.more:hover{background:var(--fill);color:var(--text)}
+.more svg{width:20px;height:20px}
+.grip{width:44px;height:52px;flex:none;display:grid;place-items:center;color:var(--text-3);cursor:grab;touch-action:none;border-radius:10px}
+.grip:hover{color:var(--text-2);background:var(--fill)}
+.drag .grip{cursor:grabbing;color:var(--accent)}
+.grip svg{width:20px;height:20px}
+body.dragging,body.dragging *{cursor:grabbing!important}
+
+.empty{padding:48px 24px;text-align:center;color:var(--text-2)}
+.skel .row .info i{display:block;height:12px;border-radius:6px;background:var(--fill);width:40%}
+.skel .row .info i+i{margin-top:8px;width:70%;height:10px}
+.skel .logo{animation:pulse 1.2s ease-in-out infinite alternate}
+@keyframes pulse{to{opacity:.45}}
+.hint{color:var(--text-2);font-size:13px;margin:10px 16px 0}
+kbd{font:inherit;font-size:12px;border:.5px solid var(--sep);border-radius:5px;padding:0 5px;background:var(--card)}
+
+/* ---------- floating save bar ---------- */
+.dock{position:fixed;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom));display:flex;justify-content:center;pointer-events:none;z-index:30;padding:0 16px}
+.capsule{pointer-events:auto;display:flex;align-items:center;gap:6px;padding:6px 6px 6px 18px;border-radius:30px;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);box-shadow:var(--shadow);border:.5px solid var(--sep);transform:translateY(140%);opacity:0;transition:transform .35s cubic-bezier(.2,.9,.25,1.1),opacity .2s;max-width:100%}
+.capsule.on{transform:none;opacity:1}
+.capsule .msg .s{display:none}
+.capsule .msg{font-size:15px;font-weight:500;margin-right:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.capsule .btn{min-height:44px;padding:0 18px;border-radius:22px;font-size:15px;flex:none}
+.capsule .ghost{background:var(--fill);color:var(--text)}
+.capsule .ghost:hover{background:var(--fill-2)}
+.capsule .go{background:var(--accent);color:var(--on-accent)}
+@media (prefers-reduced-transparency:reduce){.capsule,header{background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none}}
+
+/* ---------- menu ---------- */
+.menu{position:fixed;z-index:50;min-width:230px;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(30px);backdrop-filter:saturate(180%) blur(30px);border-radius:13px;box-shadow:var(--lift);border:.5px solid var(--sep);padding:5px;transform-origin:top right;animation:pop .16s cubic-bezier(.2,.9,.3,1.2)}
+@media (prefers-reduced-transparency:reduce){.menu{background:var(--card)}}
+@keyframes pop{from{transform:scale(.92);opacity:0}}
+.menu button{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;border:0;background:none;text-align:left;padding:10px 12px;border-radius:8px;font-size:15px;min-height:40px}
+.menu button:hover,.menu button:focus-visible{background:var(--accent);color:var(--on-accent);outline:none}
+.menu button.danger{color:var(--danger)}
+.menu button.danger:hover,.menu button.danger:focus-visible{background:var(--danger);color:#fff}
+.menu button[disabled]{opacity:.4;pointer-events:none}
+.menu hr{border:0;border-top:.5px solid var(--sep);margin:5px 8px}
+.menu svg{width:18px;height:18px;flex:none}
+.menu .who{padding:8px 12px 6px;font-size:13px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- toast ---------- */
+.toast{position:fixed;left:16px;right:16px;margin:0 auto;width:fit-content;top:calc(14px + env(safe-area-inset-top));z-index:60;transform:translateY(calc(-100% - 40px));visibility:hidden;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);border:.5px solid var(--sep);box-shadow:var(--shadow);border-radius:22px;padding:10px 18px;font-size:15px;font-weight:500;display:flex;align-items:center;gap:10px;transition:transform .35s cubic-bezier(.2,.9,.25,1.1),visibility .35s;max-width:560px}
+.toast.on{transform:none;visibility:visible}
+.toast svg{width:20px;height:20px;flex:none}
+.toast.ok svg{color:var(--up)}.toast.bad svg{color:var(--danger)}
+
+@media (max-width:520px){
+  h1{font-size:30px}
+  .rank{width:30px;font-size:19px}
+  .row{gap:10px}
+  .row+.row::before{left:84px}
+  .logo{width:40px;height:40px}
+  .more{width:36px}
+  .badge.off{display:none}
+  .capsule .msg .l{display:none}.capsule .msg .s{display:inline}
+  .capsule{padding-left:14px}
+  .capsule .btn{padding:0 14px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<header id="hdr"><div class="hbar">
+  <div class="t" id="htitle">Addons</div>
+  <span style="flex:1" id="hsp"></span>
+  <button class="ibtn hidden" id="undoBtn" aria-label="Undo" title="Undo (⌘Z)" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+  <button class="ibtn hidden" id="acctBtn" aria-label="Account and options" aria-haspopup="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button>
+</div></header>
+
+<main class="wrap">
+
+  <!-- sign in -->
+  <section id="signin" class="signin hidden" aria-labelledby="si-h">
+    <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M4 12h10M4 18h10"/><path d="M19 4v16M16.5 6.5 19 4l2.5 2.5M16.5 17.5 19 20l2.5-2.5"/></svg></div>
+    <h1 id="si-h">Addon Order</h1>
+    <p class="lede">Sign in with your Stremio account to arrange your addons. Stremio asks them for streams and catalogs <b>top to bottom</b>.</p>
+    <form id="siForm" novalidate>
+      <div class="group" id="pwGroup">
+        <div class="field"><label for="em">Email</label><input id="em" type="email" autocomplete="username" placeholder="name@example.com" required></div>
+        <div class="field"><label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" placeholder="Required" required></div>
+      </div>
+      <div class="group hidden" id="keyGroup">
+        <div class="field"><label for="ak">Auth Key</label><input id="ak" type="text" autocomplete="off" spellcheck="false" placeholder="From Stremio Web’s local storage"></div>
+      </div>
+      <p class="foot" id="siFoot">Your password goes straight to Stremio’s servers. This page only keeps the session key, in this browser.</p>
+      <button class="btn pri" id="siBtn" type="submit">Sign In</button>
+      <div class="err" id="siErr" role="alert"></div>
+      <div style="display:flex;justify-content:space-between">
+        <button class="link" type="button" id="modeBtn">Use an auth key instead</button>
+        <button class="link" type="button" id="demoBtn">Try with sample addons</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- list -->
+  <section id="main" class="hidden" aria-labelledby="m-h">
+    <h1 id="m-h">Addons</h1>
+    <p class="lede">Drag <svg aria-hidden="true" style="width:15px;height:15px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 8h14M5 12h14M5 16h14"/></svg> to reorder. Stremio checks addons from the top down, so put the ones you trust most first.</p>
+    <div class="meta"><span id="count">Loading</span><button class="link" id="reloadBtn">Reload</button></div>
+    <ol id="list" aria-describedby="kbHint"></ol>
+    <p class="hint" id="kbHint">Keyboard: focus a row and press <kbd>⌥</kbd> <kbd>↑</kbd> / <kbd>↓</kbd> to move it, <kbd>⌥</kbd> <kbd>⇧</kbd> <kbd>↑</kbd> for the top. Changes are local until you save.</p>
+  </section>
+</main>
+
+<div class="dock"><div class="capsule" id="cap" role="region" aria-label="Unsaved changes">
+  <span class="msg" id="capMsg" aria-live="polite"></span>
+  <button class="btn ghost" id="revertBtn">Revert</button>
+  <button class="btn go" id="saveBtn">Save Order</button>
+</div></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="sr" id="live" aria-live="assertive"></div>
+
+<script>
+(function(){
+'use strict';
+var API='https://api.strem.io/api/';
+var $=function(id){return document.getElementById(id)};
+var LS={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}},del:function(k){try{localStorage.removeItem(k)}catch(e){}}};
+
+var S={key:LS.get('so_key'),email:LS.get('so_email')||'',demo:false,orig:[],cur:[],hist:[],saving:false};
+
+/* ---------------- icons ---------------- */
+var I={
+  grip:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 8h14M5 12h14M5 16h14"/></svg>',
+  more:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg>',
+  lock:'<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  top:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14M12 20V9M7 13l5-5 5 5"/></svg>',
+  bot:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20h14M12 4v11M7 11l5 5 5-5"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
+  open:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>',
+  dl:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  out:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H3"/></svg>',
+  ok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="m8 12.5 2.8 2.8L16.5 9.5"/></svg>',
+  bad:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v6M12 16.6v.1"/></svg>'
+};
+
+/* ---------------- api ---------------- */
+function call(method,body){
+  return fetch(API+method,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)})
+    .then(function(r){return r.json()})
+    .then(function(j){
+      if(j.error){var e=new Error(j.error.message||'Stremio returned an error');e.code=j.error.code;throw e}
+      return j.result;
+    });
+}
+
+/* ---------------- helpers ---------------- */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function uid(a){return a.transportUrl}
+function hue(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h%360}
+function kinds(m){
+  var r=(m.resources||[]).map(function(x){return typeof x==='string'?x:x&&x.name}),out=[];
+  if(r.indexOf('stream')>-1)out.push('Streams');
+  if(r.indexOf('subtitles')>-1)out.push('Subtitles');
+  if(r.indexOf('catalog')>-1||(m.catalogs&&m.catalogs.length))out.push('Catalogs');
+  if(r.indexOf('meta')>-1)out.push('Metadata');
+  if(r.indexOf('addon_catalog')>-1)out.push('Addon Catalogs');
+  return out;
+}
+function host(u){try{var h=new URL(u).host;return h}catch(e){return u}}
+function toast(text,kind){
+  var t=$('toast');t.className='toast '+(kind||'ok');t.innerHTML=(kind==='bad'?I.bad:I.ok)+'<span>'+esc(text)+'</span>';
+  requestAnimationFrame(function(){t.classList.add('on')});
+  clearTimeout(toast.t);toast.t=setTimeout(function(){t.classList.remove('on')},kind==='bad'?6000:3800);
+}
+function say(t){$('live').textContent='';setTimeout(function(){$('live').textContent=t},30)}
+
+/* ---------------- views ---------------- */
+function show(view){
+  $('signin').classList.toggle('hidden',view!=='signin');
+  $('main').classList.toggle('hidden',view!=='main');
+  $('acctBtn').classList.toggle('hidden',view!=='main');
+  $('undoBtn').classList.toggle('hidden',view!=='main');
+  $('htitle').textContent=view==='main'?'Addons':'';
+  if(view!=='main')$('cap').classList.remove('on');
+}
+
+/* sign in */
+var keyMode=false;
+$('modeBtn').onclick=function(){
+  keyMode=!keyMode;
+  $('pwGroup').classList.toggle('hidden',keyMode);$('keyGroup').classList.toggle('hidden',!keyMode);
+  this.textContent=keyMode?'Use email and password':'Use an auth key instead';
+  $('siFoot').textContent=keyMode?'In Stremio Web, open the developer console and run JSON.parse(localStorage.profile).auth.key':'Your password goes straight to Stremio’s servers. This page only keeps the session key, in this browser.';
+  $('siErr').textContent='';(keyMode?$('ak'):$('em')).focus();
+};
+$('em').value=S.email;
+$('siForm').onsubmit=function(e){
+  e.preventDefault();
+  var err=$('siErr');err.textContent='';
+  var btn=$('siBtn');
+  var p;
+  if(keyMode){
+    var k=$('ak').value.trim().replace(/^"|"$/g,'');
+    if(!k){err.textContent='Paste your auth key to continue.';$('ak').focus();return}
+    p=call('getUser',{type:'GetUser',authKey:k}).then(function(u){return{authKey:k,user:u}});
+  }else{
+    var em=$('em').value.trim(),pw=$('pw').value;
+    if(!em){err.textContent='Enter the email you use for Stremio.';$('em').focus();return}
+    if(!pw){err.textContent='Enter your Stremio password.';$('pw').focus();return}
+    p=call('login',{type:'Login',email:em,password:pw,facebook:false});
+  }
+  btn.disabled=true;btn.innerHTML='<span class="spin" aria-hidden="true"></span>Signing In';
+  p.then(function(r){
+    S.key=r.authKey;S.email=(r.user&&r.user.email)||$('em').value.trim();S.demo=false;
+    LS.set('so_key',S.key);LS.set('so_email',S.email);$('pw').value='';
+    show('main');load();
+  }).catch(function(e){
+    err.textContent=/passphrase|password/i.test(e.message)?'That email and password don’t match a Stremio account.':
+      /session/i.test(e.message)?'That auth key has expired. Sign in with your email instead.':
+      /user not found|no such user/i.test(e.message)?'No Stremio account uses that email.':
+      (e instanceof TypeError?'Can’t reach Stremio. Check your connection and try again.':e.message);
+  }).finally(function(){btn.disabled=false;btn.textContent='Sign In'});
+};
+$('demoBtn').onclick=function(){
+  S.demo=true;S.email='Sample addons';show('main');load();
+};
+
+/* load */
+function load(){
+  $('count').textContent='Loading';
+  $('list').className='skel';
+  $('list').innerHTML=Array(6).join('<li class="row"><span class="rank"></span><span class="logo"></span><span class="info"><i></i><i></i></span></li>');
+  var p=S.demo?demoData():call('addonCollectionGet',{type:'AddonCollectionGet',authKey:S.key,update:true}).then(function(r){return r.addons||[]});
+  return p.then(function(addons){
+    S.orig=addons.slice();S.cur=addons.slice();S.hist=[];
+    $('list').className='';render();sync();
+  }).catch(function(e){
+    $('list').className='';
+    if(e.code===1||/session/i.test(e.message)){signOut(true);$('siErr').textContent='Your session ended. Sign in again.';return}
+    $('list').innerHTML='<li class="empty">Couldn’t load your addons.<br><button class="link" id="retry">Try Again</button></li>';
+    $('retry').onclick=load;$('count').textContent='';
+  });
+}
+function demoData(){
+  return fetch('https://api.strem.io/addonsofficialcollection.json').then(function(r){return r.json()}).catch(function(){return[]}).then(function(off){
+    var extra=[
+      {transportUrl:'https://torrentio.example/manifest.json',manifest:{id:'demo.torrentio',name:'Torrentio',version:'0.0.15',description:'Provides torrent streams from scraped torrent providers',resources:['stream'],types:['movie','series']},flags:{}},
+      {transportUrl:'https://comet.example/manifest.json',manifest:{id:'demo.comet',name:'Comet',version:'2.1.0',description:'Stremio’s fastest torrent and debrid search add-on',resources:[{name:'stream',types:['movie','series']}],types:['movie','series']},flags:{}},
+      {transportUrl:'https://tmdb.example/manifest.json',manifest:{id:'demo.tmdb',name:'The Movie Database',version:'3.1.4',description:'Metadata and catalogs in your language, from TMDB',resources:['catalog','meta'],catalogs:[{}],types:['movie','series']},flags:{}},
+      {transportUrl:'https://anime.example/manifest.json',manifest:{id:'demo.kitsu',name:'Anime Kitsu',version:'0.0.9',description:'Unofficial Kitsu anime catalog',resources:['catalog','meta','subtitles'],catalogs:[{}],types:['anime']},flags:{}}
+    ];
+    var a=off.length?off:[];return a.slice(0,1).concat(extra.slice(0,2),a.slice(1),extra.slice(2));
+  });
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  var L=$('list');
+  if(!S.cur.length){L.innerHTML='<li class="empty">You have no addons installed. Add some in Stremio, then reload.</li>';return}
+  var origIdx={},ms=movedSet();S.orig.forEach(function(a,i){origIdx[uid(a)]=i});
+  L.innerHTML=S.cur.map(function(a,i){
+    var m=a.manifest||{},n=m.name||m.id||host(a.transportUrl),o=origIdx[uid(a)],d=o-i,f=a.flags||{};
+    var logo=m.logo?'<img src="'+esc(m.logo.replace(/^http:/,'https:'))+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'';
+    var k=kinds(m),sub=(k.length?k.join(' · '):'')+(m.version?(k.length?'  ·  ':'')+'v'+m.version:'');
+    return '<li class="row" tabindex="0" data-i="'+i+'" aria-label="'+esc(n)+', position '+(i+1)+' of '+S.cur.length+'" title="'+esc(m.description||'')+'">'+
+      '<span class="rank" aria-hidden="true">'+(i+1)+(d&&ms[uid(a)]?'<span class="delta '+(d>0?'u':'d')+'">'+(d>0?'↑':'↓')+Math.abs(d)+'</span>':'')+'</span>'+
+      '<span class="logo'+(logo?' img':'')+'" aria-hidden="true" style="background:hsl('+hue(n)+' 45% 52%)">'+(logo||esc(n.charAt(0).toUpperCase()))+'</span>'+
+      '<span class="info"><span class="name"><span>'+esc(n)+'</span>'+(f.protected?'<em class="badge lock" title="Stremio requires this addon">'+I.lock+'Required</em>':f.official?'<em class="badge off">Official</em>':'')+'</span>'+
+      '<span class="sub">'+esc(sub||host(a.transportUrl))+'</span></span>'+
+      '<button class="more" aria-label="More for '+esc(n)+'" aria-haspopup="menu">'+I.more+'</button>'+
+      '<span class="grip" aria-hidden="true">'+I.grip+'</span></li>';
+  }).join('');
+  [].forEach.call(L.querySelectorAll('.logo img'),function(img){img.onerror=function(){var p=img.parentNode;p.classList.remove('img');p.textContent=p.closest('.row').querySelector('.name span').textContent.charAt(0).toUpperCase()}});
+  $('count').textContent=S.cur.length+' addon'+(S.cur.length===1?'':'s')+(S.demo?' · sample':'');
+}
+
+/* The fewest addons that, moved, explain the new order: everything outside the
+   longest run that kept its relative order. Only those get a delta badge. */
+function movedSet(){
+  var oi={};S.orig.forEach(function(a,i){oi[uid(a)]=i});
+  var seq=S.cur.map(function(a){return oi[uid(a)]}),n=seq.length,tails=[],prev=new Array(n),ti=[];
+  for(var i=0;i<n;i++){
+    var lo=0,hi=tails.length;while(lo<hi){var m=(lo+hi)>>1;if(seq[tails[m]]<seq[i])lo=m+1;else hi=m}
+    prev[i]=lo?tails[lo-1]:-1;tails[lo]=i;
+  }
+  var keep={},k=tails.length?tails[tails.length-1]:-1;while(k>-1){keep[k]=1;k=prev[k]}
+  var out={};for(i=0;i<n;i++)if(!keep[i])out[uid(S.cur[i])]=1;return out;
+}
+function changes(){
+  var ms=movedSet(),moved=Object.keys(ms).length,removed=S.orig.length-S.cur.length;
+  return{moved:moved,removed:removed,any:moved||removed,set:ms};
+}
+function sync(){
+  var c=changes(),cap=$('cap');
+  cap.classList.toggle('on',!!c.any||S.saving);
+  var parts=[];if(c.moved)parts.push(c.moved+' moved');if(c.removed)parts.push(c.removed+' removed');
+  var tot=c.moved+c.removed;
+  $('capMsg').innerHTML='<span class="l">'+esc(parts.join(', '))+'</span><span class="s">'+tot+' change'+(tot===1?'':'s')+'</span>';
+  $('undoBtn').disabled=!S.hist.length;
+  document.title=(c.any?'• ':'')+'Stremio Addon Order';
+}
+function commit(next,focusUid,msg){
+  S.hist.push(S.cur.slice());if(S.hist.length>100)S.hist.shift();
+  S.cur=next;render();sync();
+  if(focusUid){var i=indexOf(focusUid),r=$('list').children[i];if(r){r.focus({preventScroll:false});r.classList.add('flash')}}
+  if(msg)say(msg);
+}
+function indexOf(u){for(var i=0;i<S.cur.length;i++)if(uid(S.cur[i])===u)return i;return -1}
+function move(from,to,flash){
+  to=Math.max(0,Math.min(S.cur.length-1,to));if(from===to)return;
+  var n=S.cur.slice(),it=n.splice(from,1)[0];n.splice(to,0,it);
+  commit(n,flash!==false?uid(it):null,(it.manifest.name||'Addon')+' moved to position '+(to+1));
+}
+function undo(){
+  if(!S.hist.length)return;
+  S.cur=S.hist.pop();render();sync();say('Undone');
+}
+$('undoBtn').onclick=undo;
+$('revertBtn').onclick=function(){if(!changes().any)return;S.hist.push(S.cur.slice());S.cur=S.orig.slice();render();sync();toast('Reverted to the saved order. Undo brings your changes back.')};
+$('reloadBtn').onclick=function(){
+  if(changes().any&&!confirm('Discard your unsaved changes and reload from Stremio?'))return;
+  load();
+};
+$('saveBtn').onclick=function(){
+  if(S.saving)return;
+  var b=this;S.saving=true;b.disabled=true;$('revertBtn').disabled=true;b.innerHTML='<span class="spin" aria-hidden="true"></span>Saving';
+  var p=S.demo?new Promise(function(r){setTimeout(r,700)}):call('addonCollectionSet',{type:'AddonCollectionSet',authKey:S.key,addons:S.cur});
+  p.then(function(){
+    S.orig=S.cur.slice();S.hist=[];render();sync();
+    toast(S.demo?'Saved (sample only, nothing sent).':'Saved. Reopen Stremio to see the new order.');
+  }).catch(function(e){
+    toast(/session/i.test(e.message)?'Your session ended. Sign in again, your order is kept until you leave.':'Couldn’t save: '+e.message,'bad');
+  }).finally(function(){S.saving=false;b.disabled=false;$('revertBtn').disabled=false;b.textContent='Save Order';sync()});
+};
+
+/* ---------------- keyboard ---------------- */
+document.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'&&!/INPUT/.test(document.activeElement.tagName)&&!$('main').classList.contains('hidden')){e.preventDefault();undo();return}
+  if(e.key==='Escape'&&menuEl){closeMenu(true);return}
+  var r=document.activeElement;if(!r||!r.classList||!r.classList.contains('row')||dragging)return;
+  var i=+r.dataset.i;
+  if(e.altKey&&(e.key==='ArrowUp'||e.key==='ArrowDown')){
+    e.preventDefault();
+    var to=e.shiftKey?(e.key==='ArrowUp'?0:S.cur.length-1):i+(e.key==='ArrowUp'?-1:1);move(i,to);
+  }else if(e.key==='ArrowUp'||e.key==='ArrowDown'){
+    e.preventDefault();var n=r[e.key==='ArrowUp'?'previousElementSibling':'nextElementSibling'];if(n)n.focus();
+  }else if(e.key==='Enter'||e.key===' '){
+    e.preventDefault();openMenu(r.querySelector('.more'),i);
+  }else if(e.key==='Delete'||e.key==='Backspace'){
+    e.preventDefault();remove(i);
+  }
+});
+
+/* ---------------- menu ---------------- */
+var menuEl=null,menuFrom=null;
+function closeMenu(refocus){if(!menuEl)return;menuEl.remove();menuEl=null;if(refocus&&menuFrom)menuFrom.focus();menuFrom=null}
+function place(m,anchor){
+  var r=anchor.getBoundingClientRect(),w=m.offsetWidth,h=m.offsetHeight;
+  var x=Math.min(window.innerWidth-w-12,Math.max(12,r.right-w)),y=r.bottom+6;
+  if(y+h>window.innerHeight-12){y=Math.max(12,r.top-h-6);m.style.transformOrigin='bottom right'}
+  m.style.left=x+'px';m.style.top=y+'px';
+}
+function buildMenu(items,anchor){
+  closeMenu();menuFrom=anchor;
+  var m=document.createElement('div');m.className='menu';m.setAttribute('role','menu');
+  m.innerHTML=items.map(function(it,k){
+    if(it==='-')return '<hr>';
+    if(it.who)return '<div class="who">'+esc(it.who)+'</div>';
+    return '<button role="menuitem" data-k="'+k+'" class="'+(it.danger?'danger':'')+'"'+(it.off?' disabled':'')+'><span>'+esc(it.label)+'</span>'+(it.icon||'')+'</button>';
+  }).join('');
+  m.onclick=function(e){var b=e.target.closest('button');if(!b)return;var it=items[+b.dataset.k];closeMenu(!it.noRefocus);it.run()};
+  m.onkeydown=function(e){
+    var bs=[].slice.call(m.querySelectorAll('button:not([disabled])')),j=bs.indexOf(document.activeElement);
+    if(e.key==='ArrowDown'){e.preventDefault();bs[(j+1)%bs.length].focus()}
+    if(e.key==='ArrowUp'){e.preventDefault();bs[(j-1+bs.length)%bs.length].focus()}
+    if(e.key==='Tab'){e.preventDefault();closeMenu(true)}
+    e.stopPropagation();if(e.key==='Escape')closeMenu(true);
+  };
+  document.body.appendChild(m);place(m,anchor);menuEl=m;
+  var f=m.querySelector('button:not([disabled])');if(f)f.focus({preventScroll:true});
+}
+document.addEventListener('pointerdown',function(e){if(menuEl&&!menuEl.contains(e.target)&&!e.target.closest('.more,#acctBtn'))closeMenu()},true);
+window.addEventListener('resize',function(){closeMenu()});
+function openMenu(btn,i){
+  if(menuEl&&menuFrom===btn){closeMenu(true);return}
+  var a=S.cur[i],last=S.cur.length-1,prot=a.flags&&a.flags.protected;
+  buildMenu([
+    {label:'Move to Top',icon:I.top,off:i===0,run:function(){move(i,0)}},
+    {label:'Move Up',icon:I.up,off:i===0,run:function(){move(i,i-1)}},
+    {label:'Move Down',icon:I.down,off:i===last,run:function(){move(i,i+1)}},
+    {label:'Move to Bottom',icon:I.bot,off:i===last,run:function(){move(i,last)}},
+    '-',
+    {label:'Copy Manifest URL',icon:I.copy,run:function(){
+      (navigator.clipboard?navigator.clipboard.writeText(a.transportUrl):Promise.reject()).then(function(){toast('Manifest URL copied')},function(){prompt('Manifest URL',a.transportUrl)})}},
+    {label:'Open Manifest',icon:I.open,run:function(){window.open(a.transportUrl,'_blank','noopener')}},
+    '-',
+    {label:prot?'Required by Stremio':'Remove Addon',icon:I.trash,danger:true,off:prot,run:function(){remove(i)}}
+  ],btn);
+}
+function remove(i){
+  var a=S.cur[i];if(!a||(a.flags&&a.flags.protected))return;
+  var n=S.cur.slice();n.splice(i,1);
+  commit(n,null,(a.manifest.name||'Addon')+' removed');
+  var r=$('list').children[Math.min(i,S.cur.length-1)];if(r)r.focus();
+  toast((a.manifest.name||'Addon')+' will be removed when you save. Undo puts it back.');
+}
+$('list').addEventListener('click',function(e){
+  var b=e.target.closest('.more');if(b){e.stopPropagation();openMenu(b,+b.closest('.row').dataset.i)}
+});
+$('acctBtn').onclick=function(){
+  if(menuEl&&menuFrom===this){closeMenu(true);return}
+  buildMenu([
+    {who:S.demo?'Sample addons (not signed in)':'Signed in as '+S.email},
+    {label:'Download Backup',icon:I.dl,run:backup},
+    '-',
+    {label:S.demo?'Leave Sample':'Sign Out',icon:I.out,danger:true,noRefocus:true,run:function(){
+      if(changes().any&&!confirm('You have unsaved changes. Sign out anyway?'))return;signOut()}}
+  ],this);
+};
+function backup(){
+  var blob=new Blob([JSON.stringify(S.orig,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='stremio-addons-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1000);
+  toast('Backup of the saved order downloaded');
+}
+function signOut(quiet){
+  if(!S.demo&&S.key&&!quiet)call('logout',{type:'Logout',authKey:S.key}).catch(function(){});
+  S.key=null;S.demo=false;S.cur=[];S.orig=[];S.hist=[];LS.del('so_key');
+  show('signin');$('em').value=S.email;setTimeout(function(){$(S.email?'pw':'em').focus()},50);
+}
+
+/* ---------------- drag ---------------- */
+var dragging=null;
+$('list').addEventListener('pointerdown',function(e){
+  var g=e.target.closest('.grip');if(!g||e.button>0||S.saving)return;
+  e.preventDefault();
+  var row=g.closest('.row'),rows=[].slice.call($('list').children),i=rows.indexOf(row);
+  var sy=window.scrollY;
+  dragging={row:row,rows:rows,i:i,target:i,y0:e.clientY+sy,y:e.clientY,
+    tops:rows.map(function(r){var b=r.getBoundingClientRect();return{top:b.top+sy,h:b.height}}),pid:e.pointerId};
+  g.setPointerCapture(e.pointerId);
+  row.classList.add('drag');document.body.classList.add('dragging');
+  rows.forEach(function(r){if(r!==row)r.classList.add('shift')});
+  if(navigator.vibrate)try{navigator.vibrate(8)}catch(_){}
+  autoScroll();
+});
+$('list').addEventListener('pointermove',function(e){
+  if(!dragging||e.pointerId!==dragging.pid)return;
+  dragging.y=e.clientY;layoutDrag();
+});
+function layoutDrag(){
+  var d=dragging,yDoc=d.y+window.scrollY,dy=yDoc-d.y0,me=d.tops[d.i];
+  var minDy=d.tops[0].top-me.top,maxDy=d.tops[d.rows.length-1].top+d.tops[d.rows.length-1].h-me.top-me.h;
+  dy=Math.max(minDy-12,Math.min(maxDy+12,dy));
+  d.row.style.transform='translateY('+dy+'px) scale(1.02)';
+  var c=me.top+me.h/2+dy,t=d.i,j;
+  for(j=d.i+1;j<d.rows.length;j++)if(c>d.tops[j].top+d.tops[j].h/2)t=j;
+  for(j=d.i-1;j>=0;j--)if(c<d.tops[j].top+d.tops[j].h/2)t=j;
+  if(t!==d.target){d.target=t;if(navigator.vibrate)try{navigator.vibrate(4)}catch(_){}}
+  d.rows.forEach(function(r,k){
+    if(k===d.i)return;var s=0;
+    if(k>d.i&&k<=t)s=-me.h;else if(k<d.i&&k>=t)s=me.h;
+    r.style.transform=s?'translateY('+s+'px)':'';
+  });
+}
+function autoScroll(){
+  if(!dragging)return;
+  var y=dragging.y,h=window.innerHeight,edge=80,v=0,top=60;
+  if(y<top+edge)v=-Math.ceil((top+edge-y)/6);else if(y>h-edge)v=Math.ceil((y-(h-edge))/6);
+  if(v){var before=window.scrollY;window.scrollBy(0,v);if(window.scrollY!==before)layoutDrag()}
+  requestAnimationFrame(autoScroll);
+}
+function endDrag(e){
+  if(!dragging||e.pointerId!==dragging.pid)return;
+  var d=dragging;dragging=null;document.body.classList.remove('dragging');
+  var me=d.tops[d.i],off=0;
+  if(e.type==='pointercancel')d.target=d.i;
+  if(d.target>d.i)off=d.tops[d.target].top+d.tops[d.target].h-(me.top+me.h);
+  else if(d.target<d.i)off=d.tops[d.target].top-me.top;
+  d.row.classList.add('settle');d.row.style.transform='translateY('+off+'px)';
+  var done=false,fin=function(){if(done)return;done=true;
+    if(d.target!==d.i)move(d.i,d.target,false);else render();
+    var r=$('list').children[d.target];if(r){r.focus({preventScroll:true});r.classList.add('flash')}};
+  d.row.addEventListener('transitionend',fin,{once:true});setTimeout(fin,260);
+}
+$('list').addEventListener('pointerup',endDrag);
+$('list').addEventListener('pointercancel',endDrag);
+
+/* ---------------- chrome ---------------- */
+window.addEventListener('scroll',function(){$('hdr').classList.toggle('scrolled',window.scrollY>40)},{passive:true});
+window.addEventListener('beforeunload',function(e){if(S.cur.length&&changes().any){e.preventDefault();e.returnValue=''}});
+
+/* boot */
+var q=new URLSearchParams(location.search);
+if(q.has('demo')){S.demo=true;S.email='Sample addons';show('main');load()}
+else if(S.key){show('main');load()}
+else show('signin');
+})();
+</script>
+</body>
+</html>
